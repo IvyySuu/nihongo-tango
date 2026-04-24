@@ -1351,15 +1351,28 @@ function switchTab(tab) {
 // ─── FLASHCARD ────────────────────────────────────────
 let fcQueue = [], fcIdx = 0, fcFlipped = false;
 let fcMode = 'jp';
-let fcQueueJp = [], fcQueueZh = []; // 兩個模式各自的隊列
+let fcQueueJp = [], fcQueueZh = [];
+let fcIdxJp = 0, fcIdxZh = 0;
 
 function setCardMode(mode) {
+  // 儲存當前模式的進度
+  if (fcMode === 'jp') fcIdxJp = fcIdx;
+  else fcIdxZh = fcIdx;
+
   fcMode = mode;
   document.getElementById('mode-jp').classList.toggle('active', mode === 'jp');
   document.getElementById('mode-zh').classList.toggle('active', mode === 'zh');
   fcQueue = mode === 'jp' ? fcQueueJp : fcQueueZh;
-  fcIdx = 0; fcFlipped = false;
-  showCard();
+  fcIdx = mode === 'jp' ? fcIdxJp : fcIdxZh;
+  fcFlipped = false;
+
+  const area = document.getElementById('card-area');
+  area.style.transition = 'opacity 0.15s';
+  area.style.opacity = '0';
+  setTimeout(() => {
+    showCard();
+    area.style.opacity = '1';
+  }, 150);
 }
 
 function initFlash() {
@@ -1367,11 +1380,11 @@ function initFlash() {
   const pool = due.length > 0 ? due : [...state.words];
   fcQueueJp = shuffle([...pool]);
   fcQueueZh = shuffle([...pool]);
-  // 確保兩個隊列第一張不同
   if (fcQueueZh.length > 1 && fcQueueZh[0].id === fcQueueJp[0].id) {
     [fcQueueZh[0], fcQueueZh[1]] = [fcQueueZh[1], fcQueueZh[0]];
   }
   fcQueue = fcMode === 'jp' ? fcQueueJp : fcQueueZh;
+  fcIdxJp = 0; fcIdxZh = 0;
   fcIdx = 0; fcFlipped = false;
   updateFCStats();
   showCard();
@@ -1449,6 +1462,8 @@ function rateCard(rating) {
   rateWord(w, rating);
   markStudyToday();
   fcIdx++;
+  if (fcMode === 'jp') fcIdxJp = fcIdx;
+  else fcIdxZh = fcIdx;
   updateFCStats();
   const area = document.getElementById('card-area');
   area.style.transition = 'opacity 0.2s';
