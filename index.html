@@ -510,11 +510,16 @@ nav {
   <nav>
     <div class="nav-brand"><span>日</span>単語帳</div>
     <div class="nav-right">
+      <button onclick="openAlarmModal()" title="設定鬧鐘" style="
+        background: var(--surface2); border: 1px solid var(--border);
+        border-radius: 20px; padding: 5px 10px; cursor: pointer;
+        font-size: 15px; line-height: 1; transition: all 0.2s;
+      ">🔔</button>
       <button id="theme-toggle" onclick="toggleTheme()" title="切換亮暗色" style="
         background: var(--surface2); border: 1px solid var(--border);
         border-radius: 20px; padding: 5px 10px; cursor: pointer;
         font-size: 15px; line-height: 1; transition: all 0.2s;
-      " id="theme-toggle">🌙</button>
+      ">🌙</button>
       <div class="streak-badge"><span class="fire">🔥</span><span id="streak-num">0</span> 天</div>
     </div>
   </nav>
@@ -669,25 +674,37 @@ nav {
 
     <!-- WORDS -->
     <div class="screen" id="tab-words">
-      <div class="add-form">
-        <h3>新增單字</h3>
-        <div class="form-row">
-          <input class="form-input" id="in-kanji" placeholder="漢字 (水)">
-          <input class="form-input" id="in-hira" placeholder="平假名 (みず)">
-        </div>
-        <div class="form-row">
-          <input class="form-input full" id="in-meaning" placeholder="中文意思 (水)">
-        </div>
-        <input class="form-input full" id="in-example" placeholder="例句 (水を飲む — 喝水)" style="margin-bottom:10px">
-        <button class="add-btn" onclick="addWord()">＋ 新增</button>
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="words-mode-vocab" onclick="setWordsMode('vocab')">單字庫</button>
+        <button class="mode-btn" id="words-mode-notes" onclick="setWordsMode('notes')">翻譯筆記</button>
       </div>
 
-      <div class="section-hdr">
-        <span class="section-title">單字庫</span>
-        <span class="section-sub" id="word-count">0 個</span>
+      <!-- 單字庫 -->
+      <div id="words-vocab-panel">
+        <div class="add-form">
+          <h3>新增單字</h3>
+          <div class="form-row">
+            <input class="form-input" id="in-kanji" placeholder="漢字 (水)">
+            <input class="form-input" id="in-hira" placeholder="平假名 (みず)">
+          </div>
+          <div class="form-row">
+            <input class="form-input full" id="in-meaning" placeholder="中文意思 (水)">
+          </div>
+          <input class="form-input full" id="in-example" placeholder="例句 (水を飲む — 喝水)" style="margin-bottom:10px">
+          <button class="add-btn" onclick="addWord()">＋ 新增</button>
+        </div>
+        <div class="section-hdr">
+          <span class="section-title">單字庫</span>
+          <span class="section-sub" id="word-count">0 個</span>
+        </div>
+        <input class="form-input" id="word-search" placeholder="🔍 搜尋日文或中文…" oninput="renderWordList()" style="width:100%;margin-bottom:10px">
+        <div class="word-list" id="word-list"></div>
       </div>
-      <input class="form-input" id="word-search" placeholder="🔍 搜尋日文或中文…" oninput="renderWordList()" style="width:100%;margin-bottom:10px">
-      <div class="word-list" id="word-list"></div>
+
+      <!-- 翻譯筆記 -->
+      <div id="words-notes-panel" style="display:none">
+        <div id="words-notes-list"></div>
+      </div>
 
       <!-- Edit word modal -->
       <div id="edit-modal" style="display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.7);align-items:flex-end;justify-content:center">
@@ -725,18 +742,6 @@ nav {
       </div>
 
       <div class="prog-section">
-        <h3>過去兩週活動</h3>
-        <div class="chart-wrap">
-          <div class="bar-chart" id="bar-chart"></div>
-        </div>
-      </div>
-
-      <div class="prog-section">
-        <h3>記憶狀態 (SRS)</h3>
-        <div class="srs-bars" id="srs-bars"></div>
-      </div>
-
-      <div class="prog-section">
         <h3>今日目標</h3>
         <div class="chart-wrap">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
@@ -748,65 +753,15 @@ nav {
       </div>
 
       <div class="prog-section">
-        <h3>每日複習鬧鐘</h3>
-        <div class="chart-wrap" id="reminder-panel">
-
-          <!-- 未授權狀態 -->
-          <div id="notif-blocked" style="display:none; text-align:center; padding:8px 0">
-            <div style="font-size:13px; color:var(--danger); margin-bottom:8px">⚠️ 通知權限已被封鎖</div>
-            <div style="font-size:12px; color:var(--text2); line-height:1.6">請在瀏覽器網址列旁的🔒圖示<br>手動開啟「通知」權限後重新整理</div>
-          </div>
-
-          <!-- 主設定 -->
-          <div id="notif-main">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px">
-              <div>
-                <div style="font-size:14px; font-weight:500">每日提醒</div>
-                <div style="font-size:12px; color:var(--text2); margin-top:2px" id="notif-status-text">尚未開啟</div>
-              </div>
-              <button id="notif-toggle" onclick="toggleReminder()" style="
-                padding: 7px 16px; border-radius: 20px; border: 1px solid var(--border);
-                background: var(--surface2); color: var(--text2); font-size: 13px;
-                font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s;
-              ">開啟提醒</button>
-            </div>
-
-            <div id="notif-time-row" style="display:none">
-              <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px">
-                <span style="font-size:13px; color:var(--text2); flex-shrink:0">提醒時間</span>
-                <input type="time" id="reminder-time" value="08:00" class="form-input"
-                  style="flex:1; padding:8px 12px; font-size:14px"
-                  onchange="updateReminderTime()">
-              </div>
-              <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px">
-                <span style="font-size:12px; color:var(--text2); width:100%; margin-bottom:2px">快速選擇</span>
-                <button class="quick-time-btn" onclick="setQuickTime('07:00')">早上 7:00</button>
-                <button class="quick-time-btn" onclick="setQuickTime('08:00')">早上 8:00</button>
-                <button class="quick-time-btn" onclick="setQuickTime('12:00')">中午 12:00</button>
-                <button class="quick-time-btn" onclick="setQuickTime('20:00')">晚上 8:00</button>
-                <button class="quick-time-btn" onclick="setQuickTime('22:00')">晚上 10:00</button>
-              </div>
-              <button onclick="testNotification()" style="
-                width:100%; padding:9px; border-radius: var(--radius-sm);
-                background:none; border:1px solid var(--border); color:var(--text2);
-                font-size:13px; cursor:pointer; font-family:'DM Sans',sans-serif;
-                transition: all 0.15s;
-              " onmouseover="this.style.borderColor='var(--accent2)';this.style.color='var(--accent2)'"
-                 onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
-                🔔 測試通知
-              </button>
-            </div>
-          </div>
-
-        </div>
-        <div style="font-size:11px; color:var(--text3); margin-top:8px; line-height:1.6; padding:0 2px">
-          ⚠️ 瀏覽器通知需要網頁保持開啟或在背景執行。若要在手機上使用，建議將網頁加入主畫面（加到主屏幕）。
+        <h3>過去兩週活動</h3>
+        <div class="chart-wrap">
+          <div class="bar-chart" id="bar-chart"></div>
         </div>
       </div>
 
       <div class="prog-section">
-        <h3>翻譯筆記回顧</h3>
-        <div id="pr-notes-list"></div>
+        <h3>記憶狀態 (SRS)</h3>
+        <div class="srs-bars" id="srs-bars"></div>
       </div>
 
       <div class="prog-section">
@@ -829,6 +784,63 @@ nav {
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- 鬧鐘設定彈窗 -->
+<div id="alarm-modal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.7);align-items:flex-end;justify-content:center">
+  <div style="background:var(--surface);border-radius:20px 20px 0 0;padding:24px 20px;width:100%;max-width:480px;border-top:1px solid var(--border)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+      <div style="font-size:16px;font-weight:600">🔔 每日複習提醒</div>
+      <button onclick="closeAlarmModal()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1">×</button>
+    </div>
+
+    <div id="alarm-notif-blocked" style="display:none;text-align:center;padding:12px 0;margin-bottom:12px">
+      <div style="font-size:13px;color:var(--danger);margin-bottom:6px">⚠️ 通知權限已被封鎖</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.6">請在瀏覽器網址列旁的🔒圖示<br>手動開啟「通知」權限後重新整理</div>
+    </div>
+
+    <div id="alarm-notif-main">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div>
+          <div style="font-size:14px;font-weight:500">每日提醒</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px" id="notif-status-text">尚未開啟</div>
+        </div>
+        <button id="notif-toggle" onclick="toggleReminder()" style="
+          padding:7px 16px;border-radius:20px;border:1px solid var(--border);
+          background:var(--surface2);color:var(--text2);font-size:13px;
+          font-family:'DM Sans',sans-serif;cursor:pointer;transition:all 0.2s;
+        ">開啟提醒</button>
+      </div>
+
+      <div id="notif-time-row" style="display:none">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <span style="font-size:13px;color:var(--text2);flex-shrink:0">提醒時間</span>
+          <input type="time" id="reminder-time" value="08:00" class="form-input"
+            style="flex:1;padding:8px 12px;font-size:14px" onchange="updateReminderTime()">
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+          <span style="font-size:12px;color:var(--text2);width:100%;margin-bottom:2px">快速選擇</span>
+          <button class="quick-time-btn" onclick="setQuickTime('07:00')">早上 7:00</button>
+          <button class="quick-time-btn" onclick="setQuickTime('08:00')">早上 8:00</button>
+          <button class="quick-time-btn" onclick="setQuickTime('12:00')">中午 12:00</button>
+          <button class="quick-time-btn" onclick="setQuickTime('20:00')">晚上 8:00</button>
+          <button class="quick-time-btn" onclick="setQuickTime('22:00')">晚上 10:00</button>
+        </div>
+        <button onclick="testNotification()" style="
+          width:100%;padding:9px;border-radius:var(--radius-sm);
+          background:none;border:1px solid var(--border);color:var(--text2);
+          font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;
+        " onmouseover="this.style.borderColor='var(--accent2)';this.style.color='var(--accent2)'"
+           onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">
+          🔔 測試通知
+        </button>
+      </div>
+    </div>
+
+    <div style="font-size:11px;color:var(--text3);margin-top:14px;line-height:1.6">
+      ⚠️ 需要網頁保持開啟才能觸發提醒。建議將網頁加入主畫面使用。
+    </div>
+  </div>
+</div>
 
 <!-- 首次開啟安裝提示 -->
 <div id="install-modal" style="display:none; position:fixed; inset:0; z-index:300; background:rgba(0,0,0,0.75); align-items:flex-end; justify-content:center;">
@@ -1331,7 +1343,7 @@ function switchTab(tab) {
   event.target.classList.add('active');
   if (tab === 'flash') initFlash();
   if (tab === 'quiz') initQuiz();
-  if (tab === 'words') renderWordList();
+  if (tab === 'words') { wordsMode = 'vocab'; setWordsMode('vocab'); renderWordList(); }
   if (tab === 'progress') renderProgress();
   if (tab === 'news') loadNews();
 }
@@ -1705,24 +1717,7 @@ function renderProgress() {
 
   initReminderUI();
 
-  // 翻譯筆記回顧
-  const notesList = document.getElementById('pr-notes-list');
-  const notes = state.newsNotes || {};
-  const noteEntries = Object.entries(notes).filter(([k, v]) => v && v.trim() !== '');
-  if (noteEntries.length === 0) {
-    notesList.innerHTML = '<div style="font-size:13px;color:var(--text3);text-align:center;padding:16px 0">還沒有翻譯筆記，去進階練習寫下你的翻譯吧！</div>';
-  } else {
-    notesList.innerHTML = noteEntries.map(([key, val]) => {
-      const level = key.includes('easy') ? '🟢 簡單' : '🔴 進階';
-      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <span style="font-size:11px;color:var(--accent2)">${level}</span>
-          <button onclick="deleteNote('${key}')" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px">×</button>
-        </div>
-        <div style="font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap">${val}</div>
-      </div>`;
-    }).join('');
-  }
+  // 翻譯筆記回顧（已移到單字庫頁面）
 }
 
 // ─── AUDIO ────────────────────────────────────────────
@@ -1766,7 +1761,10 @@ function renderNewsList() {
     list.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text3);font-size:14px">✓ 所有新聞都已翻譯完成！</div>';
     return;
   }
-  list.innerHTML = filtered.map(item => item.html).join('');
+  // 每次重新從資料生成 HTML，確保筆記內容是最新的
+  list.innerHTML = filtered.map(item =>
+    newsCardHTML(item.i, item.title, item.body, item.date, item.link, item.tag)
+  ).join('');
 }
 
 const NEWS_SOURCES = {
@@ -1866,7 +1864,14 @@ async function loadNews() {
       const articleLink = newsLevel === 'hard' ? src.link : (item.querySelector('link')?.textContent || src.fallbackLink);
       const pubDate = item.querySelector('pubDate')?.textContent || '';
       const date = pubDate ? new Date(pubDate).toLocaleDateString('zh-TW', { month:'numeric', day:'numeric', weekday:'short' }) : '';
-      return { i, html: newsCardHTML(i, title, desc, date, articleLink, src.tag) };
+      // 儲存日文原文供進度頁顯示
+      const noteKey = 'news_note_' + newsLevel + '_' + i;
+      if (!state.newsNotes) state.newsNotes = {};
+      if (!state.newsNotes['news_orig_' + newsLevel + '_' + i]) {
+        state.newsNotes['news_orig_' + newsLevel + '_' + i] = { title, body: desc, date };
+        saveState();
+      }
+      return { i, title, body: desc, date, link: articleLink, tag: src.tag };
     });
     list._newsItems = newsItems;
     loading.style.display = 'none';
@@ -1893,7 +1898,13 @@ function renderNewsFallbackItems() {
     { title: '日本銀行が金融政策を維持', body: '日本銀行は金融政策決定会合を開き、現行の金融緩和政策を維持することを決定した。国内外の経済動向を注視しながら、適切な政策運営を続けるとしている。' },
     { title: '国内の観光業が回復傾向', body: '観光庁によると、国内旅行者数が昨年比で大幅に増加しており、コロナ禍前の水準に近づいていることが分かった。インバウンド需要も堅調に推移している。' },
   ];
-  return samples.map((s, i) => ({ i: 'f'+i, html: newsCardHTML('f'+i, s.title, s.body, '今日', src.fallbackLink, src.tag) }));
+  return samples.map((s, i) => {
+    const key = 'f'+i;
+    if (!state.newsNotes['news_orig_' + newsLevel + '_' + key]) {
+      state.newsNotes['news_orig_' + newsLevel + '_' + key] = { title: s.title, body: s.body, date: '今日' };
+    }
+    return { i: key, title: s.title, body: s.body, date: '今日', link: src.fallbackLink, tag: src.tag };
+  });
 }
 
 function speakNewsBtn(btn) {
@@ -1971,16 +1982,76 @@ document.getElementById('news-add-modal').addEventListener('click', function(e) 
   if (e.target === this) closeNewsModal();
 });
 
+function openAlarmModal() {
+  document.getElementById('alarm-modal').style.display = 'flex';
+  initReminderUI();
+}
+function closeAlarmModal() {
+  document.getElementById('alarm-modal').style.display = 'none';
+}
+document.getElementById('alarm-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeAlarmModal();
+});
+
+let wordsMode = 'vocab';
+function setWordsMode(mode) {
+  wordsMode = mode;
+  document.getElementById('words-mode-vocab').classList.toggle('active', mode === 'vocab');
+  document.getElementById('words-mode-notes').classList.toggle('active', mode === 'notes');
+  document.getElementById('words-vocab-panel').style.display = mode === 'vocab' ? '' : 'none';
+  document.getElementById('words-notes-panel').style.display = mode === 'notes' ? '' : 'none';
+  if (mode === 'notes') renderWordsNotes();
+}
+
+function renderWordsNotes() {
+  const list = document.getElementById('words-notes-list');
+  const notes = state.newsNotes || {};
+  const noteEntries = Object.entries(notes).filter(([k, v]) =>
+    !k.startsWith('news_orig_') && v && v.trim() !== ''
+  );
+  if (noteEntries.length === 0) {
+    list.innerHTML = '<div style="font-size:13px;color:var(--text3);text-align:center;padding:32px 0">還沒有翻譯筆記，去進階練習寫下你的翻譯吧！</div>';
+    return;
+  }
+  list.innerHTML = noteEntries.map(([key, val]) => {
+    const level = key.includes('easy') ? '🟢 簡單' : '🔴 進階';
+    const origKey = key.replace('news_note_', 'news_orig_');
+    const orig = notes[origKey];
+    const origHtml = orig ? `
+      <div style="font-family:'Noto Serif JP',serif;font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+        ${orig.title ? `<div style="font-weight:700;margin-bottom:4px">${orig.title}</div>` : ''}
+        ${orig.body ? `<div style="font-size:12px">${orig.body}</div>` : ''}
+      </div>` : '';
+    const shortVal = val.length > 60 ? val.slice(0, 60) + '…' : val;
+    const noteId = 'wn-' + key.replace(/[^a-z0-9]/gi, '_');
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:8px;overflow:hidden">
+      <div onclick="toggleNoteCollapse('${noteId}')" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer">
+        <div>
+          <span style="font-size:11px;color:var(--accent2)">${level}</span>
+          ${orig?.date ? `<span style="font-size:11px;color:var(--text3);margin-left:6px">${orig.date}</span>` : ''}
+          <div style="font-size:12px;color:var(--text2);margin-top:3px">${shortVal}</div>
+        </div>
+        <span id="${noteId}-icon" style="color:var(--text3);font-size:12px;flex-shrink:0;margin-left:8px">▼</span>
+      </div>
+      <div id="${noteId}" style="display:none;padding:0 14px 14px">
+        ${origHtml}
+        <div style="font-size:13px;color:var(--text);line-height:1.7;white-space:pre-wrap">${val}</div>
+        <button onclick="deleteNote('${key}');renderWordsNotes()" style="margin-top:10px;background:none;border:1px solid rgba(247,110,110,0.3);border-radius:6px;color:var(--danger);font-size:12px;padding:4px 10px;cursor:pointer;font-family:'DM Sans',sans-serif">刪除筆記</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 // ─── REMINDER / NOTIFICATIONS ────────────────────────
 function initReminderUI() {
   if (!('Notification' in window)) {
-    document.getElementById('notif-main').innerHTML =
+    document.getElementById('alarm-notif-main').innerHTML =
       '<div style="font-size:13px;color:var(--text2);text-align:center;padding:8px 0">您的瀏覽器不支援通知功能</div>';
     return;
   }
   if (Notification.permission === 'denied') {
-    document.getElementById('notif-blocked').style.display = 'block';
-    document.getElementById('notif-main').style.display = 'none';
+    document.getElementById('alarm-notif-blocked').style.display = 'block';
+    document.getElementById('alarm-notif-main').style.display = 'none';
     return;
   }
   const enabled = state.reminderEnabled;
@@ -2176,8 +2247,20 @@ function closeInstallModal() {
 function deleteNote(key) {
   if (!confirm('確定要刪除這則翻譯筆記嗎？')) return;
   delete state.newsNotes[key];
+  // 也刪除對應的原文
+  const origKey = key.replace('news_note_', 'news_orig_');
+  delete state.newsNotes[origKey];
   saveState();
   renderProgress();
+}
+
+function toggleNoteCollapse(id) {
+  const el = document.getElementById(id);
+  const icon = document.getElementById(id + '-icon');
+  if (!el) return;
+  const isOpen = el.style.display !== 'none';
+  el.style.display = isOpen ? 'none' : 'block';
+  if (icon) icon.textContent = isOpen ? '▼' : '▲';
 }
 
 // ─── RESET ────────────────────────────────────────────
