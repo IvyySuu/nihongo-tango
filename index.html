@@ -1669,7 +1669,7 @@ function addWord() {
   const meaning = document.getElementById('in-meaning').value.trim();
   const example = document.getElementById('in-example').value.trim();
   if (!kanji || !meaning) { showToast('請輸入漢字和中文意思'); return; }
-  state.words.push({ id: state.nextId++, kanji, hira, meaning, example, srs: 0, nextReview: 0, correct: 0, total: 0 });
+  state.words.unshift({ id: state.nextId++, kanji, hira, meaning, example, srs: 0, nextReview: 0, correct: 0, total: 0 });
   ['in-kanji','in-hira','in-meaning','in-example'].forEach(id => document.getElementById(id).value = '');
   saveState();
   renderWordList();
@@ -1987,7 +1987,7 @@ function saveNewsWord() {
   const meaning = document.getElementById('nm-meaning').value.trim();
   const example = document.getElementById('nm-example').value.trim();
   if (!kanji || !meaning) { showToast('請輸入漢字和中文意思'); return; }
-  state.words.push({ id: state.nextId++, kanji, hira, meaning, example, srs:0, nextReview:0, correct:0, total:0 });
+  state.words.unshift({ id: state.nextId++, kanji, hira, meaning, example, srs:0, nextReview:0, correct:0, total:0 });
   saveState();
   closeNewsModal();
   showToast('✓ 已加入單字庫！');
